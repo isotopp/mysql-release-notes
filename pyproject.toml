@@ -1,0 +1,20 @@
+[project]
+name = "mysql-release-notes"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Kristian Koehntopp", email = "kris-git@koehntopp.de" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.2.1",
+    "requests>=2.32.4",
+]
+
+[project.scripts]
+mysql-release-notes = "mysql_release_notes:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
