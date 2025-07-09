@@ -29,11 +29,19 @@ class Issues:
     title: str | None = field(default=None, repr=False, init=False)
     soup: BeautifulSoup | None = field(default=None, repr=False, init=False)
 
-    def __init__(self, html: str):
+    def __init__(self, html: str, rel_no):
         self.soup = BeautifulSoup(html, "html.parser")
         self.issues = list()
 
-        self.title = self.soup.find("title").get_text()
+        self.title = self.soup.find("title")
+        if self.title is None:
+            self.title = "Not Released"
+            self.rel_date = "Not Released"
+            self.rel_status = "Not Released"
+            self.rel_no = rel_no
+            return
+
+        self.title = self.title.get_text()
         self.parse_title()
         self.parse_sects()
 
@@ -59,10 +67,20 @@ class Issues:
             # Issue List
             issue_list = section.find_all("li", class_="listitem")
             for issue in issue_list:
-                tags = list()
-                tags.append(section_title)
+                tags = [section_title]
 
+                # grab all the text, collapse whitespace
                 full_text = issue.get_text(separator=" ", strip=True)
+                full_text = re.sub(r"\s+", " ", full_text).strip()
+
+                # more tags
+                m = re.match(r"^(?P<header>[^:]{1,60}):\s*(?P<body>.+)$", full_text)
+                if m:
+                    header = m.group("header")
+                    header_tags = [tag.strip() for tag in re.split(r"[;,]", header) if tag.strip()]
+                    tags = list(set(header_tags) | set(tags))
+                    full_text = m.group("body")
+
                 bugs = re.findall(r"Bug\s+#(\d+)", full_text)
                 worklogs = re.findall(r"WL\s+#(\d+)", full_text)
                 thanks = re.findall(r"Our thanks to (.+) for the contribution", full_text)

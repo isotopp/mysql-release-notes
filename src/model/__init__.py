@@ -1,7 +1,7 @@
 import hashlib
 
 from sqlalchemy import (
-    Column, String, Integer, Text, ForeignKey, Table, UniqueConstraint
+    Column, String, Integer, Text, ForeignKey, Table
 )
 from sqlalchemy.orm import relationship, declarative_base, validates
 
@@ -156,3 +156,20 @@ class Page(Base):
             raise ValueError("Page.url cannot be empty or null")
         self.hash = hashlib.sha256(value.encode("utf-8")).hexdigest()
         return value
+
+
+def attach(session, cls, items, rel, unique_col="name"):
+    if not items:
+        return
+    if isinstance(items, str):
+        items = [items]
+    for val in set(items):
+        col = getattr(cls, unique_col)
+        existing = session.query(cls).filter(col == val).first()
+        if existing:
+            rel.append(existing)
+        else:
+            obj = cls(**{unique_col: val})
+            session.add(obj)
+            session.flush()
+            rel.append(obj)
